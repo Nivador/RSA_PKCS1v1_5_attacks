@@ -1,6 +1,8 @@
+from sage.all import *
+
 # setup
 def generate_keypair(size_N_in_bits):
-    size_prime = 1 << (size_N_in_bits / 2)
+    size_prime = 1 << (size_N_in_bits // 2)
     while True:
         p = random_prime(size_prime)
         q = random_prime(size_prime)
@@ -28,7 +30,7 @@ def padding(message, target_length):
     # random
     random_pad = os.urandom(target_length - 3 - get_byte_length(message))
     for idx, val in enumerate(random_pad):
-        res += ord(val) << (len(random_pad) - idx + get_byte_length(message)) * 8
+        res += val << (len(random_pad) - idx + get_byte_length(message)) * 8
     # 00
     # message
     res += message
@@ -59,14 +61,14 @@ def bleichenbacher_padding():
     N_size = get_byte_length(N)
     plaintext = 0x6c6f6c # "lol"
     padded = padding(plaintext, N_size)
-    print "to find:", padded
+    print("to find:", padded)
     ciphertext = power_mod(padded, e, N)
 
     # setup attack
     N_bit_length = (get_byte_length(N) - 2) * 8
     B = 1 << N_bit_length
-    print hex(padded)
-    print hex(B)
+    print(hex(padded))
+    print(hex(B))
     
     # attack
     previous_steps = [(2*B, 3*B-1)]
@@ -74,7 +76,7 @@ def bleichenbacher_padding():
     i = 1
     while True:
         # debug
-        print "Entering step", i
+        print("Entering step", i)
         # find a valid padding
         c2 = 0
         if i > 1 and len(previous_steps) == 1:
@@ -99,17 +101,17 @@ def bleichenbacher_padding():
                 mult += 1 
                 c2 = (ciphertext * power_mod(mult, e, N)) % N
         # debug
-        print "found a valid padding", c2
+        print("found a valid padding", c2)
         # compute the new set of intervals
         new_interval = []
         for interval in previous_steps:
             min_range = (interval[0] * mult - 3 * B + 1) // N
             max_range = (interval[1] * mult - 2 * B) // N
-            print max_range + 1 - min_range, "possible r's"
-            print interval[0]
-            print interval[1]
+            print(max_range + 1 - min_range, "possible r's")
+            print(interval[0])
+            print(interval[1])
             possible_r = min_range
-            print max_range + 1
+            print(max_range + 1)
             while possible_r < max_range + 1:
                 new_min = max(interval[0], ceil((2*B+possible_r*N)/mult))
                 new_max = min(interval[1], floor((3*B-1+possible_r*N)/mult))
@@ -118,24 +120,24 @@ def bleichenbacher_padding():
                     continue
                 # found?
                 if new_max == new_min:
-                    print "found!"
-                    print new_min
-                    print "did we find that?"
-                    print padded
-                    print "took", time.time() - start_time, "seconds"
+                    print("found!")
+                    print(new_min)
+                    print("did we find that?")
+                    print(padded)
+                    print("took", time.time() - start_time, "seconds")
                     return
                 # nope
                 new_interval.append((new_min, new_max))
-                print ""
+                print("")
                 possible_r += 1
         previous_steps = new_interval
         i += 1
         # debug
-        print "\n"
-        print len(previous_steps), "potential intervals left:"
+        print("\n")
+        print(len(previous_steps), "potential intervals left:")
         for interval in previous_steps:
-            print " - [", interval[0], ",", interval[1], "]"
-        print "\n"
+            print(" - [", interval[0], ",", interval[1], "]")
+        print("\n")
 
 def bleichenbacher_length():
     # time
@@ -146,15 +148,15 @@ def bleichenbacher_length():
     N_size = get_byte_length(N)
     plaintext = 0x6c6f6c # "lol"
     padded = padding(plaintext, N_size)
-    print "to find:", padded
+    print("to find:", padded)
     ciphertext = power_mod(padded, e, N)
 
     # setup attack
     N_byte_length = get_byte_length(N)
     N_bit_length = (N_byte_length - 2) * 8
     B = 1 << N_bit_length
-    print hex(padded)
-    print hex(B)
+    print(hex(padded))
+    print(hex(B))
     
     # attack
     previous_steps = [(2*B, 3*B-1)]
@@ -162,11 +164,11 @@ def bleichenbacher_length():
     i = 1
     while True:
         # debug
-        print "Entering step", i
+        print("Entering step", i)
         # find a valid padding
         c2 = 0
         if i > 1 and len(previous_steps) == 1:
-            print "entering step 2c."
+            print("entering step 2c.")
             nn = N_byte_length - 2 # set it like that ...
             previous_mult = mult
             ri = floor(2 * (previous_steps[0][1]*previous_mult - 2^(8*(nn-1))) / N)
@@ -185,23 +187,23 @@ def bleichenbacher_length():
                 ri += 1
                 
         else:
-            print "entering step 2a or 2b."
+            print("entering step 2a or 2b.")
             nn = N_byte_length + 10
             while not(nn < N_byte_length - 1):
                 mult += 1 
                 c2 = (ciphertext * power_mod(mult, e, N)) % N
                 nn = oracle_length(c2, d, N)
         # debug
-        print "found a valid padding", c2
+        print("found a valid padding", c2)
         # compute the new set of intervals
         new_interval = []
         for interval in previous_steps:
             min_range = (interval[0]*mult - 2^(8*nn) - 1) // N
             max_range = (interval[1]*mult - 2^(8*(nn-1))) // N
-            print "min, max range for r:", min_range, max_range + 1
-            print max_range + 1 - min_range, "possible r's"
-            print interval[0]
-            print interval[1]
+            print("min, max range for r:", min_range, max_range + 1)
+            print(max_range + 1 - min_range, "possible r's")
+            print(interval[0])
+            print(interval[1])
             possible_r = min_range
 
             while possible_r < max_range + 1:
@@ -213,11 +215,11 @@ def bleichenbacher_length():
                     continue
                 # found?
                 if new_max == new_min:
-                    print "found!"
-                    print new_min
-                    print "did we find that?"
-                    print padded
-                    print "took", time.time() - start_time, "seconds"
+                    print("found!")
+                    print(new_min)
+                    print("did we find that?")
+                    print(padded)
+                    print("took", time.time() - start_time, "seconds")
                     return
                 # nope
                 new_interval.append((new_min, new_max))
@@ -225,11 +227,11 @@ def bleichenbacher_length():
         previous_steps = new_interval
         i += 1
         # debug
-        print "\n"
-        print len(previous_steps), "potential intervals left:"
+        print("\n")
+        print(len(previous_steps), "potential intervals left:")
         for interval in previous_steps:
-            print " - [", interval[0], ",", interval[1], "]"
-        print "\n"
+            print(" - [", interval[0], ",", interval[1], "]")
+        print("\n")
 
 
 #    

@@ -1,6 +1,8 @@
+from sage.all import *
+
 # setup
 def generate_keypair(size_N_in_bits):
-    size_prime = 1 << (size_N_in_bits / 2)
+    size_prime = 1 << (size_N_in_bits // 2)
     while True:
         p = random_prime(size_prime)
         q = random_prime(size_prime)
@@ -28,7 +30,7 @@ def padding(message, target_length):
     # random
     random_pad = os.urandom(target_length - 3 - get_byte_length(message))
     for idx, val in enumerate(random_pad):
-        res += ord(val) << (len(random_pad) - idx + get_byte_length(message)) * 8
+        res += val << (len(random_pad) - idx + get_byte_length(message)) * 8
     # 00
     # message
     res += message
@@ -59,7 +61,7 @@ def print_meta(text):
     sys.stdout.flush()
 
 def print_line(min, max, m, ranges):
-#    print min, max, m, ranges
+    print(min, max, m, ranges)
     # init
     to_draw = {}
 
@@ -71,7 +73,7 @@ def print_line(min, max, m, ranges):
     for r in ranges:
         down = round((r[0]-min)*100/dist)
         up = round((r[1]-min)*100/dist)
-        for i in range(down, up+1):
+        for i in range(int(down), int(up)+1):
             if i == down:
                 to_draw[i] = "["
             elif i == up:
@@ -98,11 +100,11 @@ def bleichenbacher_padding():
     import time
     start_time = time.time()
     # setup
-    e, d, N = generate_keypair(512)
+    e, d, N = generate_keypair(2048)
     N_size = get_byte_length(N)
     plaintext = 0x6c6f6c # "lol"
     padded = padding(plaintext, N_size)
-    print "to find:", padded
+    print(("to find:", padded))
     ciphertext = power_mod(padded, e, N)
 
     # setup attack
@@ -162,18 +164,18 @@ def bleichenbacher_padding():
                 mult += 1 
                 c2 = (ciphertext * power_mod(mult, e, N)) % N
         # debug
-#        print "found a valid padding", c2
-#        raw_input("press a key to enter next step...\n")
+        print("found a valid padding", c2)
+        #input("press a key to enter next step...\n")
         # compute the new set of intervals
         new_interval = []
         for interval in previous_steps:
             min_range = (interval[0] * mult - 3 * B + 1) // N
             max_range = (interval[1] * mult - 2 * B) // N
-#            print max_range + 1 - min_range, "possible r's"
-#            print interval[0]
-#            print interval[1]
+            print(max_range + 1 - min_range, "possible r's")
+            print(interval[0])
+            print(interval[1])
             possible_r = min_range
-#            print max_range + 1
+            print(max_range + 1)
             while possible_r < max_range + 1:
                 new_min = max(interval[0], ceil((2*B+possible_r*N)/mult))
                 new_max = min(interval[1], floor((3*B-1+possible_r*N)/mult))
@@ -182,15 +184,15 @@ def bleichenbacher_padding():
                     continue
                 # found?
                 if new_max == new_min:
-#                    print "found!"
-#                    print new_min
-#                    print "did we find that?"
-#                    print padded
-#                    print "took", time.time() - start_time, "seconds"
+                    print("found!")
+                    print(new_min)
+                    print("did we find that?")
+                    print(padded)
+                    print("took", time.time() - start_time, "seconds")
                     return
                 # nope
                 new_interval.append((new_min, new_max))
-#                print ""
+                print("")
                 possible_r += 1
         # debug
         print_meta("reducing range")
@@ -200,11 +202,11 @@ def bleichenbacher_padding():
         previous_steps = new_interval
         i += 1
         # debug
-#        print "\n"
-#        print len(previous_steps), "potential intervals left:"
-#        for interval in previous_steps:
-#            print " - [", interval[0], ",", interval[1], "]"
-#        print "\n"
+        print("\n")
+        print(len(previous_steps), "potential intervals left:")
+        for interval in previous_steps:
+            print(" - [", interval[0], ",", interval[1], "]")
+        print("\n")
 
 if __name__ == "__main__":
     bleichenbacher_padding()

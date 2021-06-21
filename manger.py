@@ -165,4 +165,4 @@ if __name__ == "__main__":
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    Manger(512, logger)
+    Manger(2048, logger)
